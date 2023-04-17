@@ -3,7 +3,7 @@ namespace JackNTFS.src.userinterface.imports
     internal abstract class AbstractInputHandler
     {
         /* 回复限制 */
-        private RestrictionStyle mRestr;
+        private RestrictionStyle mStyle;
         /* 回复期盼 */
         private string mExpect;
         /* 输入流源 */
@@ -19,9 +19,9 @@ namespace JackNTFS.src.userinterface.imports
             MULTIPARITY
         }
 
-        protected AbstractInputHandler(RestrictionStyle restr, String expect, Stream importStream, Stream exportStream)
+        protected AbstractInputHandler(RestrictionStyle style, string expect, Stream importStream, Stream exportStream)
         {
-            this.mRestr = restr;
+            this.mStyle = style;
             this.mExpect = expect;
             this.mImportStream = importStream;
             this.mExportStream = exportStream;
@@ -30,10 +30,10 @@ namespace JackNTFS.src.userinterface.imports
         public abstract int Handle();
 
         public RestrictionStyle GetRestrictionStyle()
-        { return this.mRestr; }
+        { return this.mStyle; }
 
-        protected void SetRestrictionStyle(RestrictionStyle restr)
-        { this.mRestr = restr; }
+        protected void SetRestrictionStyle(RestrictionStyle style)
+        { this.mStyle = style; }
 
         public string GetExpect()
         { return mExpect; }

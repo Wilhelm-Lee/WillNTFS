@@ -16,6 +16,7 @@ namespace JackNTFS.src.userinterface.imports
         {
             mUserInput = new StreamReader(mImportStream).ReadLine();
 
+            /* Null check */
             if (mUserInput == null)
             {
                 mUserInput = "";

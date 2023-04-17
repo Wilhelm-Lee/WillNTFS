@@ -9,18 +9,18 @@ namespace JackNTFS.src.environment
 {
     internal class ExceptionHunter
     {
-        protected readonly Exception mE;
+        protected readonly Exception mExcep;
         protected object[] mAssets;
 
         public ExceptionHunter(Exception e)
         {
-            this.mE = e;
+            this.mExcep = e;
             this.mAssets = new object[0];
         }
 
         public ExceptionHunter(Exception e, object[] assets)
         {
-            this.mE = e;
+            this.mExcep = e;
             this.mAssets = assets;
         }
 
