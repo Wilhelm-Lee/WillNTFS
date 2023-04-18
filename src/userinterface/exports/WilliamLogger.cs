@@ -254,7 +254,7 @@ namespace WillNTFS.src.userinterface.exports
 
             if (string.IsNullOrEmpty(purpose))
             {
-                throw new ArgumentException($"“{nameof(purpose)}”不能为 null 或空。", nameof(purpose));
+                throw new ArgumentException($"\"{nameof(purpose)}\" cannot be empty nor nulled", nameof(purpose));
             }
 
             if (info is null)
@@ -290,10 +290,10 @@ namespace WillNTFS.src.userinterface.exports
                         .Log(new object[]
                              {
                                  $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message}",
+                                 $"{e.Message} ",
                                  $"This exception will be ignored."
                              },
-                             SERIOUS, EXCEPTION
+                             SERIOUS, e.GetType().ToString()
                         );
                 }
             }
@@ -307,7 +307,7 @@ namespace WillNTFS.src.userinterface.exports
 
             if (string.IsNullOrEmpty(purpose))
             {
-                throw new ArgumentException($"“{nameof(purpose)}”不能为 null 或空。", nameof(purpose));
+                throw new ArgumentException($"\"{nameof(purpose)}\" cannot be empty nor nulled", nameof(purpose));
             }
 
             if (info is null)
@@ -344,10 +344,10 @@ namespace WillNTFS.src.userinterface.exports
                         .Log(new object[]
                              {
                                  $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message}",
+                                 $"{e.Message} ",
                                  $"This exception will be ignored."
                              },
-                             SERIOUS, EXCEPTION
+                             SERIOUS, e.GetType().ToString()
                         );
                 }
             }
@@ -361,7 +361,7 @@ namespace WillNTFS.src.userinterface.exports
 
             if (string.IsNullOrEmpty(purpose))
             {
-                throw new ArgumentException($"“{nameof(purpose)}”不能为 null 或空。", nameof(purpose));
+                throw new ArgumentException($"\"{nameof(purpose)}\" cannot be empty nor nulled", nameof(purpose));
             }
 
             if (info is null)
@@ -407,10 +407,10 @@ namespace WillNTFS.src.userinterface.exports
                         .Log(new object[]
                              {
                                  $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message}",
+                                 $"{e.Message} ",
                                  $"This exception will be ignored."
                              },
-                             SERIOUS, EXCEPTION
+                             SERIOUS, e.GetType().ToString()
                         );
                 }
             }
@@ -466,10 +466,10 @@ namespace WillNTFS.src.userinterface.exports
                         .Log(new object[]
                              {
                                  $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message}",
+                                 $"{e.Message} ",
                                  $"This exception will be ignored."
                              },
-                             SERIOUS, EXCEPTION
+                             SERIOUS, e.GetType().ToString()
                         );
                 }
             }

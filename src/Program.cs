@@ -9,15 +9,14 @@ namespace WillNTFS
         {
             FileStream target1 = File.OpenWrite("D:\\WillNTFS1.txt");
             FileStream target2 = File.OpenWrite("D:\\WillNTFS2.txt");
-            WilliamLogger logger = new WilliamLogger(WPriority.ALL, WPurpose.LOGGING, true);
+            WilliamLogger logger = new(WPriority.ALL, WPurpose.LOGGING, true);
 
             WilliamLogger.GetGlobal().Log(
                 new object[]
                 {
                     "TEST TEXT\nSECOND LINE"
                 },
-                WPriority.DEFAULT,
-                WPurpose.DEFAULT,
+                logger,
                 new FileStream[]
                 {
                     target1,
