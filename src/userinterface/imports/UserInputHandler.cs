@@ -1,4 +1,4 @@
-namespace JackNTFS.src.userinterface.imports
+namespace WillNTFS.src.userinterface.imports
 {
     internal class UserInputHandler : AbstractInputHandler
     {

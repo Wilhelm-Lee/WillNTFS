@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JackNTFS.src.environment
+namespace WillNTFS.src.environment
 {
     internal class ExceptionHunter
     {

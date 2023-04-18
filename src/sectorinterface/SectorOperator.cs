@@ -1,4 +1,4 @@
-﻿using JackNTFS.src.userinterface.exports;
+﻿using WillNTFS.src.userinterface.exports;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using static JackNTFS.src.userinterface.exports.WilliamLogger.WPriority;
-using static JackNTFS.src.userinterface.exports.WilliamLogger.WPurpose;
+using static WillNTFS.src.userinterface.exports.WilliamLogger.WPriority;
+using static WillNTFS.src.userinterface.exports.WilliamLogger.WPurpose;
 
-namespace JackNTFS.src.sectorinterface
+namespace WillNTFS.src.sectorinterface
 {
     internal abstract class SectorOperator
     {
@@ -77,13 +77,31 @@ namespace JackNTFS.src.sectorinterface
                 // TEST OVER
             } catch (IndexOutOfRangeException e) {
                 WilliamLogger.GetGlobal()
-                    .Log(WilliamLogger.WPriority.SERIOUS,
-                         WilliamLogger.WPurpose.LOGGING,
+                    .Log(
                          new object[]
                          {
                              $"{nameof(WriteBuff)} had a problem with range indexing."
-                         }
+                         },
+                         WilliamLogger.WPriority.SERIOUS,
+                         WilliamLogger.WPurpose.EXCEPTION
                     );
+                using (FileStream redir = File.OpenWrite(WilliamLogger.GetGlobal().GetLogFile()))
+                {
+                    WilliamLogger.GetGlobal()
+                    .Log(
+                         new object[]
+                         {
+                             e.Message
+                         },
+                         WilliamLogger.WPriority.SERIOUS,
+                         WilliamLogger.WPurpose.EXCEPTION,
+                         new FileStream[]
+                         {
+                             redir
+                         },
+                         true
+                         );
+                }
 
                 return -1;
             }

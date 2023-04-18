@@ -1,4 +1,4 @@
-namespace JackNTFS.src.sectorinterface
+namespace WillNTFS.src.sectorinterface
 {
     internal class SectorWriter
     {
