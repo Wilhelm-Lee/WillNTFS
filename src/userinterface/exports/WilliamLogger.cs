@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ namespace WillNTFS.src.userinterface.exports
     internal class WilliamLogger
     {
         /* Static fields */
+        public  readonly static Encoding globalEnc = Encoding.Unicode;
         public  readonly static string WILLIAM_LOG_DECORATION = ">>> ";
         public  readonly static string WILLIAM_SIGN = "William";
         public  readonly static string DEAFULT_WILLIAM_PURPOSE = WPurpose.LOGGING;
@@ -24,6 +26,16 @@ namespace WillNTFS.src.userinterface.exports
         private readonly static string DEFAULT_LOG_FILE_PATH = $"C:\\Users\\{Environment.UserName}\\Documents\\WilliamNTFSLog";
         private static WilliamLogger globalWilliamLogger
             = new(WilliamLogger.WPriority.NONE, WilliamLogger.WPurpose.NOTHING);
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_ALL
+            = new bool[][] { new bool[] { true, true, true }, new bool[] { true, true, true }, new bool[] { true, true, true } };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE
+            = new bool[][] { new bool[] { false, false, false }, new bool[] { false, false, false }, new bool[] { false, false, false } };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_READONLY
+            = new bool[][] { new bool[] { true, false, false }, new bool[] { true, false, false }, new bool[] { true, false, false } };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_WRITEONLY
+            = new bool[][] { new bool[] { false, true, false }, new bool[] { false, true, false }, new bool[] { false, true, false } };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_SEEKONLY
+            = new bool[][] { new bool[] { false, false, true }, new bool[] { false, false, true }, new bool[] { false, false, true } };
 
         /* Instance fields */
         private readonly DateTimeFormat mLogFileNameDateTimeFormat;
@@ -123,8 +135,9 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFile = this.mLogFilePath + this.mLogFileName;
             mLogFileName ??= DEFAULT_LOG_FILE_NAME;
 
-            /* 这里不需要用到 using。
-             * Log 函数会有需要，因为会对流进行操作。 */
+            /* We do not need the keyword "using" here.
+             * It will be needed by function Log,
+             * because function Log will operate to IO flow. */
             this.mRedirections = new StreamWriter[1];
             /* mRedirections[0] will be initialised in function Log */
 
@@ -415,7 +428,45 @@ namespace WillNTFS.src.userinterface.exports
                 }
             }
         }
-        public void Log(object[] info, object[] priority, string purpose, FileStream[] redirections, Exception innerException, bool redirectionsOnly) { }
+        public void Log(object[] info, object[] priority, string purpose, FileStream[] redirections, Exception innerException, bool redirectionsOnly)
+        {
+            priority ??= WPriority.DEFAULT;
+            purpose ??= WPurpose.DEFAULT;
+            info ??= new object[0];
+            _ = innerException ?? new();
+
+            if (redirections is null)
+            {
+                throw new ArgumentNullException(nameof(redirections));
+            }
+
+            for (int i = 0; i < redirections.Length; i++)
+            {
+                try
+                {
+                    if (!redirectionsOnly)
+                    {
+                        using (this.mRedirections[i] = new StreamWriter(Console.OpenStandardOutput()))
+                        {
+                            // Output -> mRedirections[i]
+                            redirections[i].Write(Convert.FromBase64String(GenerateLogContent(GenerateWilliamPrecontent(priority, purpose), info)));
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    WilliamLogger.GetGlobal()
+                        .Log(new object[]
+                             {
+                                 $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
+                                 $"{e.Message} ",
+                                 $"This exception will be ignored."
+                             },
+                             SERIOUS, e.GetType().ToString()
+                        );
+                }
+            }
+        }
         public void Log(object[] info, WilliamLogger logger)
         {
             logger ??= GetGlobal();
@@ -474,7 +525,25 @@ namespace WillNTFS.src.userinterface.exports
                 }
             }
         }
-        public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, bool redirectionsOnly) { }
+        public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, bool redirectionsOnly)
+        {
+            if (info is null)
+            {
+                throw new ArgumentNullException(nameof(info));
+            }
+
+            if (logger is null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+
+            if (redirections is null)
+            {
+                throw new ArgumentNullException(nameof(redirections));
+            }
+
+
+        }
         public void Log(object[] info, WilliamLogger logger, Exception innerException) { }
         public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, Exception innerException) { }
         public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, Exception innerException, bool redirectionsOnly) { }
@@ -623,8 +692,16 @@ namespace WillNTFS.src.userinterface.exports
             return globalWilliamLogger;
         }
 
-        private static void LogToVariantStreams(WilliamLogger wLogger, object[] streams)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="wLogger"></param>
+        /// <param name="streams">Target indexed stream array.</param>
+        /// <exception cref="ArgumentException">Thrown once target indexed object is not Stream nor sub-Stream.</exception>
+        private void LogToVariantStreams(WilliamLogger wLogger, FileStream[] streams)
         {
+            CheckRedirectionsPermissions(streams, FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_ALL);
+
             for (int i = 0; i < streams.Length; i ++)
             {
                 if (streams[i] is not Stream)
@@ -633,8 +710,14 @@ namespace WillNTFS.src.userinterface.exports
                         $"non-Stream item as its parameters");
                 }
 
-                /* Keyword "using" is used from caller */
-                ((FileStream)streams[i]).Write(GenerateWilliamPrecontentByteArray(wLogger.mPriority, wLogger.mPurpose));
+                try
+                {
+                    /* Keyword "using" is used from caller */
+                    streams[i].Write(GenerateWilliamPrecontentByteArray(wLogger.mPriority, wLogger.mPurpose));
+                } catch (IOException ioe)
+                {
+
+                }
             }
         }
 
@@ -642,26 +725,83 @@ namespace WillNTFS.src.userinterface.exports
         /// 
         /// </summary>
         /// <param name="streams"></param>
-        /// <param name="restrictions"></param> An 2D array stores restrictions on
-        /// making specified permission of item being accessible.
+        /// <param name="restrictions"></param> An 2D array stores restriction on
+        /// making specified permission of item being accessed.
         /// { item1, item2, item3... } is for items;
         /// { READING, WRITTING, SEEKING } is for permissions;
         /// Each item have those 3 permissions to be optionally required.
-        /// Formular: restrictions[ITEM][PERM] : bool
-        /// <exception cref="IOException"></exception>
-        private static void CheckRedirectionsPermissions(FileStream[] streams, bool[][] restrictions)
+        /// Formular: restriction[ITEM][PERM] : bool
+        /// <exception cref="IOException">Thrown once errored accessing.</exception>
+        private void CheckRedirectionsPermissions(FileStream[] streams, bool[][] restrictions)
         {
             for (int i = 0; i < streams.Length; i ++)
             {
-                // Check for reading permission
-                if (!streams[i].CanRead && restrictions[i][0])
-                    throw new IOException($"File \"{streams[i].Name}\" cannot be read.");
-                // Check for writting permission
-                if (!streams[i].CanWrite && restrictions[i][1])
-                    throw new IOException($"File \"{streams[i].Name}\" cannot be written.");
-                // Check for seeking permission
-                if (!streams[i].CanSeek && restrictions[i][2])
-                    throw new IOException($"File \"{streams[i].Name}\" cannot be seeken.");
+                CheckRedirectionPermissions(streams[i], restrictions[i]);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="restriction">A linear array stores restriction on
+        /// making specified permission of item being accessed.
+        /// { READING, WRITTING, SEEKING } is for item's permissions;
+        /// Each item have those 3 permissions to be optionally required.
+        /// Formular: restriction[ITEM][PERM] : bool */
+        /// <exception cref="IOException">Thrown once errored accessing.</exception>
+        private void CheckRedirectionPermissions(FileStream stream, bool[] restriction)
+        {
+            for (int i = 0; i < 3; i ++)
+            {
+                /* Restricted */
+                if (restriction[i])
+                {
+                    /* Readable -> Do nothing */
+                    /* Unreadable -> Exception */
+                    if (!stream.CanRead)
+                    {
+                        throw new IOException($"File \"{stream.Name}\" cannot be read.");
+                    }
+                    /* Same */
+                    if (!stream.CanWrite)
+                    {
+                        throw new IOException($"File \"{stream.Name}\" cannot be written.");
+                    }
+                    /* Same */
+                    if (!stream.CanSeek)
+                    {
+                        throw new IOException($"File \"{stream.Name}\" cannot be seeken.");
+                    }
+                }
+                else /* Inrestricted */
+                {
+                    /* Readable -> Do nothing */
+                    /* Unreadable -> Log warnning */
+                    if (!stream.CanRead)
+                    {
+                        string info = $"File \"{stream.Name}\" was neither readable nor restricted.";
+                        WilliamLogger.GetGlobal()
+                            .Log(new object[] { info },
+                            MAJOR, LOGGING, new FileStream[] { File.OpenWrite(this.mLogFile) });
+                    }
+                    /* Same */
+                    if (!stream.CanWrite)
+                    {
+                        string info = $"File \"{stream.Name}\" was neither writable nor restricted.";
+                        WilliamLogger.GetGlobal()
+                            .Log(new object[] { info },
+                            MAJOR, LOGGING, new FileStream[] { File.OpenWrite(this.mLogFile) });
+                    }
+                    /* Same */
+                    if (!stream.CanSeek)
+                    {
+                        string info = $"File \"{stream.Name}\" was neither seekable nor restricted.";
+                        WilliamLogger.GetGlobal()
+                            .Log(new object[] { info },
+                            MAJOR, LOGGING, new FileStream[] { File.OpenWrite(this.mLogFile) });
+                    }
+                }
             }
         }
 
@@ -695,6 +835,26 @@ namespace WillNTFS.src.userinterface.exports
             newArray[len - 1] = content;
 
             return newArray;
+        }
+
+        private static bool[][] FileStreamAccessPermissionRestrictionsAdding(bool[][] A, bool[][] B)
+        {
+            bool[][] rtn = FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE;
+
+            for (int i = 0; i < A.Length; i ++)
+                for (int j = 0; j < A[0].Length; j ++)
+                    rtn[i][j] = (A[i][j] || B[i][j]);
+            return rtn;
+        }
+
+        private static bool[][] FileStreamAccessPermissionRestrictionsMinusing(bool[][] A, bool[][] B)
+        {
+            bool[][] rtn = FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE;
+
+            for (int i = 0; i < A.Length; i ++)
+                for (int j = 0; j < A[0].Length; j ++)
+                    rtn[i][j] = (A[i][j] ^ B[i][j]);
+            return rtn;
         }
     }
 }
