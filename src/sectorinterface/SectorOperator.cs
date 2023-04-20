@@ -1,4 +1,4 @@
-﻿using WillNTFS.src.userinterface.exports;
+﻿/*using WillNTFS.src.userinterface.exports;*/
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -6,15 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using static WillNTFS.src.userinterface.exports.WilliamLogger.WPriority;
-using static WillNTFS.src.userinterface.exports.WilliamLogger.WPurpose;
+/*using static WillNTFS.src.userinterface.exports.WilliamLogger.WPriority;
+using static WillNTFS.src.userinterface.exports.WilliamLogger.WPurpose;*/
+using log4net;
+using log4net.Repository.Hierarchy;
 
 namespace WillNTFS.src.sectorinterface
 {
     internal abstract class SectorOperator
     {
+        private ILog sectorLogger
+            = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         protected readonly Stream stream;
-        private char[] buffer;
+        private Int16[] buffer;
         private int buffUsed;
         private int buffSize;
 
@@ -22,7 +27,7 @@ namespace WillNTFS.src.sectorinterface
         {
             this.stream = stream;
             this.buffSize = buffSize;
-            this.buffer = new char[buffSize];
+            this.buffer = new Int16[buffSize];
             this.buffUsed = 0;
         }
 
@@ -37,7 +42,7 @@ namespace WillNTFS.src.sectorinterface
         }
 
         /* Returns -1 once predicted overflow */
-        protected int WriteBuff(char[] content)
+        protected int WriteBuff(Int16[] content)
         {
             for (int i = buffUsed; i < content.Length; i ++)
             {
@@ -54,10 +59,10 @@ namespace WillNTFS.src.sectorinterface
         }
 
         /* Returns -1 once predicted overflow */
-        protected int WriteBuff(int offset, int length, char[] content)
+        protected int WriteBuff(Int16[] buff, int offset, int count)
         {
             /*int i = offset;
-            for (; i < (offset + length); i ++)
+            for (; i < (offset + count); i ++)
             {
                 if (i > buffSize)
                 {
@@ -65,7 +70,7 @@ namespace WillNTFS.src.sectorinterface
                     return -1;
                 }
 
-                buffer[i] = content[i];
+                buffer[i] = buff[i];
             }
             buffUsed = i;
             return buffUsed;*/
@@ -76,7 +81,7 @@ namespace WillNTFS.src.sectorinterface
                 return -1;
                 // TEST OVER
             } catch (IndexOutOfRangeException e) {
-                WilliamLogger.GetGlobal()
+/*                WilliamLogger.GetGlobal()
                     .Log(
                          new object[]
                          {
@@ -101,18 +106,25 @@ namespace WillNTFS.src.sectorinterface
                          },
                          true
                          );
-                }
+                }*/
+
+                sectorLogger.Error($"{nameof(WriteBuff)} had a problem with range indexing.", e);
+
+                return -1;
+            } catch (IOException ioe)
+            {
+                sectorLogger.Error($"{nameof(WriteBuff)} had a problem with I/O.", ioe);
 
                 return -1;
             }
 
         }
 
-        protected char[] ReadBuff() { return buffer; }
+        protected Int16[] ReadBuff() { return buffer; }
 
-        protected char[] ReadBuff(int offset, int length)
+        protected Int16[] ReadBuff(int offset, int length)
         {
-            char[] buffRead = new char[length];
+            Int16[] buffRead = new Int16[length];
 
             for (int i = 0; i < length; i ++)
             {

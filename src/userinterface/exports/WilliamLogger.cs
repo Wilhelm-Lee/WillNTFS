@@ -8,7 +8,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
-
+using WillNTFS.src.environment;
 using static WillNTFS.src.userinterface.exports.WilliamLogger.WPriority;
 using static WillNTFS.src.userinterface.exports.WilliamLogger.WPurpose;
 
@@ -17,27 +17,59 @@ namespace WillNTFS.src.userinterface.exports
     // William
     internal class WilliamLogger
     {
-        /* Static fields */
-        public  readonly static Encoding globalEnc = Encoding.Unicode;
-        public  readonly static string WILLIAM_LOG_DECORATION = ">>> ";
-        public  readonly static string WILLIAM_SIGN = "William";
-        public  readonly static string DEAFULT_WILLIAM_PURPOSE = WPurpose.LOGGING;
-        private readonly static string DEFAULT_LOG_FILE_NAME = "UntitledLog";
-        private readonly static string DEFAULT_LOG_FILE_PATH = $"C:\\Users\\{Environment.UserName}\\Documents\\WilliamNTFSLog";
+        /*Static fields*/
+        public readonly static Encoding globalEnc = Encoding.Unicode;
+        public readonly static string WILLIAM_LOG_DECORATION = ">>> ";
+        public readonly static string WILLIAM_SIGN = "William";
+        public readonly static string DEAFULT_WILLIAM_PURPOSE = WPurpose.LOGGING;
+        private readonly static string DEFAULT_LOG_FILE_NAME_ALONE = "UntitledLog";
+        private readonly static string DEFAULT_LOG_FILE_PATH = $"C:\\Users\\{Environment.UserName}\\Documents\\WilliamNTFSLog.wlog";
         private static WilliamLogger globalWilliamLogger
             = new(WilliamLogger.WPriority.NONE, WilliamLogger.WPurpose.NOTHING);
-        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_ALL
-            = new bool[][] { new bool[] { true, true, true }, new bool[] { true, true, true }, new bool[] { true, true, true } };
-        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE
-            = new bool[][] { new bool[] { false, false, false }, new bool[] { false, false, false }, new bool[] { false, false, false } };
-        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_READONLY
-            = new bool[][] { new bool[] { true, false, false }, new bool[] { true, false, false }, new bool[] { true, false, false } };
-        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_WRITEONLY
-            = new bool[][] { new bool[] { false, true, false }, new bool[] { false, true, false }, new bool[] { false, true, false } };
-        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_SEEKONLY
-            = new bool[][] { new bool[] { false, false, true }, new bool[] { false, false, true }, new bool[] { false, false, true } };
 
-        /* Instance fields */
+        private readonly static bool[] FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_ALL
+            = new bool[] { true, true, true    };
+        private readonly static bool[] FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_NONE
+            = new bool[] { false, false, false };
+        private readonly static bool[] FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_READONLY
+            = new bool[] { true, false, false  };
+        private readonly static bool[] FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_WRITEONLY
+            = new bool[] { false, true, false  };
+        private readonly static bool[] FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_SEEKONLY
+            = new bool[] { false, false, true  };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_ALL
+            = new bool[][] {
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_ALL,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_ALL,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_ALL
+            };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE
+            = new bool[][] {
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_NONE,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_NONE,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_NONE
+            };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_READONLY
+            = new bool[][] {
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_READONLY,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_READONLY,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_READONLY
+            };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_WRITEONLY
+            = new bool[][] {
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_WRITEONLY,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_WRITEONLY,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_WRITEONLY
+            };
+        private readonly static bool[][] FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_SEEKONLY
+            = new bool[][] {
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_SEEKONLY,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_SEEKONLY,
+                FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_SEEKONLY
+            };
+        private static readonly int BUFF_SIZE_MAX = 4096;
+
+        /*Instance fields*/
         private readonly DateTimeFormat mLogFileNameDateTimeFormat;
         private readonly DateTime mLogFileNameDateTimeValue;
         private readonly string mLogFileName;
@@ -45,22 +77,23 @@ namespace WillNTFS.src.userinterface.exports
         private readonly string mLogFile;
         private readonly object[] mPriority;
         private readonly string mPurpose;
-        private readonly StreamWriter[] mRedirections;
-        private readonly FileStream[] mFileRedirestions;
+        private readonly string[] mRedirections;
+        private readonly FileStream[] mFileStreams;
         private readonly bool mRedirectionsOnly;
+        private Int16[] buffer;
 
         public class WPriority
         {
-            public static readonly object[] NONE         = { "NONE",        int.MinValue };
-            public static readonly object[] MINOR        = { "MINOR",       10000        };
-            public static readonly object[] NORMAL       = { "NORMAL",      20000        };
-            public static readonly object[] MAJOR        = { "MAJOR",       30000        };
-            public static readonly object[] SERIOUS      = { "SERIOUS",     40000        };
-            public static readonly object[] DANDEROUS    = { "DANDEROUS",   50000        };
-            public static readonly object[] FATAL        = { "FATAL",       60000        };
-            public static readonly object[] DEBUG        = { "DEBUG",       70000        };
-            public static readonly object[] ALL          = { "ALL",         int.MaxValue };
-            public static readonly object[] DEFAULT      = NONE;
+            public static readonly object[] NONE = { "NONE", int.MinValue };
+            public static readonly object[] MINOR = { "MINOR", 10000 };
+            public static readonly object[] NORMAL = { "NORMAL", 20000 };
+            public static readonly object[] MAJOR = { "MAJOR", 30000 };
+            public static readonly object[] SERIOUS = { "SERIOUS", 40000 };
+            public static readonly object[] DANDEROUS = { "DANDEROUS", 50000 };
+            public static readonly object[] FATAL = { "FATAL", 60000 };
+            public static readonly object[] DEBUG = { "DEBUG", 70000 };
+            public static readonly object[] ALL = { "ALL", int.MaxValue };
+            public static readonly object[] DEFAULT = NONE;
 
             private WPriority() { }
 
@@ -87,9 +120,10 @@ namespace WillNTFS.src.userinterface.exports
                     else if (i64Current == i64Other)
                     { return 0; }
                     else
-                    { return -1;}
+                    { return -1; }
 
-                } catch (IndexOutOfRangeException outOfRangeExcep)
+                }
+                catch (IndexOutOfRangeException outOfRangeExcep)
                 {
                     globalWilliamLogger
                         .Log(new object[]
@@ -116,450 +150,209 @@ namespace WillNTFS.src.userinterface.exports
 
         public class WPurpose
         {
-            public static readonly string NOTHING   = "Nothing";
-            public static readonly string LOGGING   = "Logging";
-            public static readonly string TESTING   = "Testing";
+            public static readonly string NOTHING = "Nothing";
+            public static readonly string LOGGING = "Logging";
+            public static readonly string TESTING = "Testing";
             public static readonly string EXCEPTION = "Exception";
-            public static readonly string DEFAULT   = NOTHING;
+            public static readonly string DEFAULT = NOTHING;
         }
 
-        public WilliamLogger(object[] priority, string wPurpose)
+        public WilliamLogger(object[] priority, string purpose)
         {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
             this.mPriority = priority;
-            this.mPurpose = wPurpose;
+            this.mPurpose = purpose;
 
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
-            this.mLogFileName = mLogFileNameDateTimeFormat.ToString();
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                                ? DEFAULT_LOG_FILE_NAME_ALONE
+                                                : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
-            this.mLogFile = this.mLogFilePath + this.mLogFileName;
-            mLogFileName ??= DEFAULT_LOG_FILE_NAME;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
-            /* We do not need the keyword "using" here.
-             * It will be needed by function Log,
-             * because function Log will operate to IO flow. */
-            this.mRedirections = new StreamWriter[1];
-            /* mRedirections[0] will be initialised in function Log */
-
-            /* Same as above */
-            this.mFileRedirestions = new FileStream[1];
-
+            this.mRedirections = new string[] { "" };
+            this.mFileStreams = new FileStream[1];
             this.mRedirectionsOnly = false;
-        }
 
-        public WilliamLogger(object[] priority, string wPurpose, StreamWriter[] redirections)
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, string[] redirections)
         {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
             this.mPriority = priority;
-            this.mPurpose = wPurpose;
+            this.mPurpose = purpose;
 
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
-            this.mLogFileName = mLogFileNameDateTimeFormat.ToString();
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                                ? DEFAULT_LOG_FILE_NAME_ALONE
+                                                : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
-            this.mLogFile = this.mLogFilePath + this.mLogFileName;
-            mLogFileName ??= DEFAULT_LOG_FILE_NAME;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
-            /* We do not need the keyword "using" here.
-             * It will be needed by function Log,
-             * because function Log will operate to IO flow. */
             this.mRedirections = redirections;
-
-            /* Same as above */
-            this.mFileRedirestions = new FileStream[1];
-
+            this.mFileStreams = new FileStream[1];
             this.mRedirectionsOnly = false;
-        }
 
-        public WilliamLogger(object[] priority, string wPurpose, StreamWriter[] redirections, bool redirectionsOnly)
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, string[] redirections, bool redirectionsOnly)
         {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
             this.mPriority = priority;
-            this.mPurpose = wPurpose;
+            this.mPurpose = purpose;
 
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
-            this.mLogFileName = mLogFileNameDateTimeFormat.ToString();
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                                ? DEFAULT_LOG_FILE_NAME_ALONE
+                                                : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
-            this.mLogFile = this.mLogFilePath + this.mLogFileName;
-            mLogFileName ??= DEFAULT_LOG_FILE_NAME;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
-            /* We do not need the keyword "using" here.
-             * It will be needed by function Log,
-             * because function Log will operate to IO flow. */
             this.mRedirections = redirections;
-
-            /* Same as above */
-            this.mFileRedirestions = new FileStream[1];
-
+            this.mFileStreams = new FileStream[1];
             this.mRedirectionsOnly = redirectionsOnly;
-        }
 
-        public WilliamLogger(object[] priority, string wPurpose, bool redirectionsOnly)
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, bool redirectionsOnly)
         {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
             this.mPriority = priority;
-            this.mPurpose = wPurpose;
+            this.mPurpose = purpose;
 
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
-            this.mLogFileName = mLogFileNameDateTimeFormat.ToString();
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                                ? DEFAULT_LOG_FILE_NAME_ALONE
+                                                : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
-            this.mLogFile = this.mLogFilePath + this.mLogFileName;
-            mLogFileName ??= DEFAULT_LOG_FILE_NAME;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
-            /* We do not need the keyword "using" here.
-             * It will be needed by function Log,
-             * because function Log will operate to IO flow. */
-            // FIXME: Use FileStream instead. Because StreamWriter does not write for output stream ports.
-            this.mRedirections = new StreamWriter[] { new StreamWriter(Console.OpenStandardOutput()) };
-
-            /* Same as above */
-            this.mFileRedirestions = new FileStream[1];
-
+            this.mRedirections = new string[] { "" };
+            this.mFileStreams = new FileStream[1];
             this.mRedirectionsOnly = redirectionsOnly;
+
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, FileStream[] streamRedirections)
+        {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
+            this.mPriority = priority;
+            this.mPurpose = purpose;
+
+            this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
+            this.mLogFileNameDateTimeValue = DateTime.Now;
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                                ? DEFAULT_LOG_FILE_NAME_ALONE
+                                                : logFIleNameDateTimeFormatString);
+            this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
+
+            this.mRedirections = new string[] { "" };
+            this.mFileStreams = streamRedirections;
+            this.mRedirectionsOnly = false;
+
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, FileStream[] streamRedirections, bool redirectionsOnly)
+        {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
+            this.mPriority = priority;
+            this.mPurpose = purpose;
+
+            this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
+            this.mLogFileNameDateTimeValue = DateTime.Now;
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                                ? DEFAULT_LOG_FILE_NAME_ALONE
+                                                : logFIleNameDateTimeFormatString);
+            this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
+
+            this.mRedirections = new string[] { "" };
+            this.mFileStreams = streamRedirections;
+            this.mRedirectionsOnly = redirectionsOnly;
+
+            this.buffer = new Int16[BUFF_SIZE_MAX];
         }
 
-        public object[] Priority { get { return mPriority;} }
+        public object[] Priority { get { return mPriority; } }
 
-        public string Purpose { get { return mPurpose;} }
+        public string Purpose { get { return mPurpose; } }
 
-        /*
-         * 00 func Log: (object[] info)                                                                                          // Uses @info, Priority.DEFAULT, Purpose.DEFAULT, stderr, Exception, false
-         * 01 func Log: (object[] info, object[] priority, string purpose)                                                       // Uses @info, @priority, @purpose, stderr, Exception, false
-         * 02 func Log: (object[] info, object[] priority, string purpose, FileStream[] redirections)                            // Uses @info, @priority, @purpose, @redirections, Exception, false
-         * 03 func Log: (object[] info, object[] priority, string purpose, FileStream[] redirections, bool redirectionsOnly)     // Uses @info, @priority, @purpose, @redirections, Exception, @redirectionsOnly
-         * 03 func Log: (object[] info, object[] priority, string purpose, Exception innerException)                             // Uses @info, @priority, @purpose, stderr, @innerException, false
-         * 04 func Log: (object[] info, object[] priority, string purpose, FileStream[] redirections, Exception innerException)  // Uses @info, @priority, @purpose, @redirections, @innerException, false
-         * 05 func Log: (object[] info, object[] priority, string purpose, FileStream[] redirections, Exception innerException,  // Uses @info, @priority, @purpose, @redirections, @innerException, @redirectionsOnly
+        
+        /* 00 func Log: (object[]? info)                                                                                         // Uses @info, Priority.DEFAULT, Purpose.DEFAULT, stderr, Exception, false
+         * 01 func Log: (object[]? info, object[] priority, string purpose)                                                      // Uses @info, @priority, @purpose, stderr, Exception, false
+         * 02 func Log: (object[]? info, object[] priority, string purpose, string[]? redirections)                              // Uses @info, @priority, @purpose, @redirections, Exception, false
+         * 03 func Log: (object[]? info, object[] priority, string purpose, string[]? redirections, bool redirectionsOnly)       // Uses @info, @priority, @purpose, @redirections, Exception, @redirectionsOnly
+         * 03 func Log: (object[]? info, object[] priority, string purpose, Exception innerException)                            // Uses @info, @priority, @purpose, stderr, @innerException, false
+         * 04 func Log: (object[]? info, object[] priority, string purpose, string[]? redirections, Exception innerException)    // Uses @info, @priority, @purpose, @redirections, @innerException, false
+         * 05 func Log: (object[]? info, object[] priority, string purpose, string[]? redirections, Exception innerException,    // Uses @info, @priority, @purpose, @redirections, @innerException, @redirectionsOnly
          * ....................................................................................... bool redirectionsOnly)
-         * 06 func Log: (object[] info, WilliamLogger logger)                                                                    // Uses @info, @logger.mPriority, @logger.mPurpose, stderr, Exception, false
-         * 07 func Log: (object[] info, WilliamLogger logger, FileStream[] redirections)                                         // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, Exception, false
-         * 08 func Log: (object[] info, WilliamLogger logger, FileStream[] redirections, bool redirectionsOnly)                  // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, Exception, @redirectionsOnly
-         * 09 func Log: (object[] info, WilliamLogger logger, Exception innerException)                                          // Uses @info, @logger.mPriority, @logger.mPurpose, stderr, @innerException, false
-         * 0A func Log: (object[] info, WilliamLogger logger, FileStream[] redirections, Exception innerException)               // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, @innerException, false
-         * 0B func Log: (object[] info, WilliamLogger logger, FileStream[] redirections, Exception innerException,               // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, @innerException, @redirectionsOnly
+         * 06 func Log: (object[]? info, WilliamLogger logger)                                                                   // Uses @info, @logger.mPriority, @logger.mPurpose, stderr, Exception, false
+         * 07 func Log: (object[]? info, WilliamLogger logger, string[]? redirections)                                           // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, Exception, false
+         * 08 func Log: (object[]? info, WilliamLogger logger, string[]? redirections, bool redirectionsOnly)                    // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, Exception, @redirectionsOnly
+         * 09 func Log: (object[]? info, WilliamLogger logger, Exception innerException)                                         // Uses @info, @logger.mPriority, @logger.mPurpose, stderr, @innerException, false
+         * 0A func Log: (object[]? info, WilliamLogger logger, string[]? redirections, Exception innerException)                 // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, @innerException, false
+         * 0B func Log: (object[]? info, WilliamLogger logger, string[]? redirections, Exception innerException,                 // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, @innerException, @redirectionsOnly
          * .......................................................................... bool redirectionsOnly)
          */
 
-        public void Log(object[] info)
+        public void Log(object[]? info)
         {
-            Log(info, this.Priority, this.Purpose);
+            Log(info, WPriority.DEFAULT, WPurpose.DEFAULT, null, false);
         }
-        public void Log(object[] info, object[] priority, string purpose)
+        public void Log(object[]? info, object[] priority, string purpose)
         {
-            priority ??= WPriority.DEFAULT;
-            purpose ??= WPurpose.DEFAULT;
-            info ??= new object[0];
-
-            if (!this.mRedirectionsOnly)
-            {
-                using (this.mRedirections[0] = new StreamWriter(Console.OpenStandardOutput()))
-                {
-                    // Output -> stdout
-                    mRedirections[0].Write(GenerateLogContent(GenerateWilliamPrecontent(priority, purpose), info));
-                }
-            }
+            Log(info, priority, purpose, null, false);
         }
-        public void Log(object[] info, object[] priority, string purpose, FileStream[] redirections)
+        public void Log(object[]? info, object[] priority, string purpose, string[]? redirections)
         {
-            if (priority is null)
-            {
-                throw new ArgumentNullException(nameof(priority));
-            }
+            Log(info, priority, purpose, redirections, false);
+        }
+        /* ! */ public void Log(object[]? info, object[] priority, string purpose, string[]? redirections, bool redirectionsOnly)
+        {
+            /* Null check */
+            info ??= new object[] { "" }; // YOU LEFT HERE
+            redirections ??= new string[] { DEFAULT_LOG_FILE_PATH + DEFAULT_LOG_FILE_NAME_ALONE }; // HERE
 
-            if (string.IsNullOrEmpty(purpose))
-            {
-                throw new ArgumentException($"\"{nameof(purpose)}\" cannot be empty nor nulled", nameof(purpose));
-            }
-
-            if (info is null)
-            {
-                throw new ArgumentNullException(nameof(info));
-            }
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
+            string result = GenerateLogContent(GenerateWilliamPrecontent(priority, purpose), info);
 
             for (int i = 0; i < redirections.Length; i ++)
             {
-                try
-                {
-                    if (!this.mRedirectionsOnly)
-                    {
-                        using (this.mRedirections[i] = new StreamWriter(Console.OpenStandardOutput()))
-                        {
-                            // Output -> mRedirections[i]
-                            redirections[i].Write(GenerateLogContentByteArray(GenerateWilliamPrecontent(priority, purpose), info));
-                        }
-                    }
-                } catch (Exception e)
-                {
-                    WilliamLogger.GetGlobal()
-                        .Log(new object[]
-                             {
-                                 $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message} ",
-                                 $"This exception will be ignored."
-                             },
-                             SERIOUS, e.GetType().ToString()
-                        );
-                }
+
             }
         }
-        public void Log(object[] info, object[] priority, string purpose, FileStream[] redirections, bool redirectionsOnly)
-        {
-            if (priority is null)
-            {
-                throw new ArgumentNullException(nameof(priority));
-            }
-
-            if (string.IsNullOrEmpty(purpose))
-            {
-                throw new ArgumentException($"\"{nameof(purpose)}\" cannot be empty nor nulled", nameof(purpose));
-            }
-
-            if (info is null)
-            {
-                throw new ArgumentNullException(nameof(info));
-            }
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-            for (int i = 0; i < redirections.Length; i++)
-            {
-                try
-                {
-                    if (!redirectionsOnly)
-                    {
-                        using (this.mRedirections[i] = new StreamWriter(Console.OpenStandardOutput()))
-                        {
-                            // Output -> mRedirections[i]
-                            redirections[i].Write(GenerateLogContentByteArray(GenerateWilliamPrecontent(priority, purpose), info));
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    WilliamLogger.GetGlobal()
-                        .Log(new object[]
-                             {
-                                 $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message} ",
-                                 $"This exception will be ignored."
-                             },
-                             SERIOUS, e.GetType().ToString()
-                        );
-                }
-            }
-        }
-        public void Log(object[] info, object[] priority, string purpose, Exception innerException)
-        {
-            if (priority is null)
-            {
-                throw new ArgumentNullException(nameof(priority));
-            }
-
-            if (string.IsNullOrEmpty(purpose))
-            {
-                throw new ArgumentException($"\"{nameof(purpose)}\" cannot be empty nor nulled", nameof(purpose));
-            }
-
-            if (info is null)
-            {
-                throw new ArgumentNullException(nameof(info));
-            }
-
-            if (innerException is null)
-            {
-                throw new ArgumentNullException(nameof(innerException));
-            }
-
-            Log(info, SERIOUS, EXCEPTION);
-        }
-        public void Log(object[] info, object[] priority, string purpose, FileStream[] redirections, Exception innerException)
-        {
-            priority ??= WPriority.DEFAULT;
-            purpose ??= WPurpose.DEFAULT;
-            info ??= new object[0];
-            _ = innerException ?? new();
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-            for (int i = 0; i < redirections.Length; i++)
-            {
-                try
-                {
-                    if (!this.mRedirectionsOnly)
-                    {
-                        using (this.mRedirections[i] = new StreamWriter(Console.OpenStandardOutput()))
-                        {
-                            // Output -> mRedirections[i]
-                            redirections[i].Write(Convert.FromBase64String(GenerateLogContent(GenerateWilliamPrecontent(priority, purpose), info)));
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    WilliamLogger.GetGlobal()
-                        .Log(new object[]
-                             {
-                                 $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message} ",
-                                 $"This exception will be ignored."
-                             },
-                             SERIOUS, e.GetType().ToString()
-                        );
-                }
-            }
-        }
-        public void Log(object[] info, object[] priority, string purpose, FileStream[] redirections, Exception innerException, bool redirectionsOnly)
-        {
-            priority ??= WPriority.DEFAULT;
-            purpose ??= WPurpose.DEFAULT;
-            info ??= new object[0];
-            _ = innerException ?? new();
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-            for (int i = 0; i < redirections.Length; i++)
-            {
-                try
-                {
-                    if (!redirectionsOnly)
-                    {
-                        using (this.mRedirections[i] = new StreamWriter(Console.OpenStandardOutput()))
-                        {
-                            // Output -> mRedirections[i]
-                            redirections[i].Write(Convert.FromBase64String(GenerateLogContent(GenerateWilliamPrecontent(priority, purpose), info)));
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    WilliamLogger.GetGlobal()
-                        .Log(new object[]
-                             {
-                                 $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message} ",
-                                 $"This exception will be ignored."
-                             },
-                             SERIOUS, e.GetType().ToString()
-                        );
-                }
-            }
-        }
-        public void Log(object[] info, WilliamLogger logger)
-        {
-            logger ??= GetGlobal();
-            info ??= new object[] { $"{nameof(info)} should never be null." };
-
-            if (!this.mRedirectionsOnly)
-            {
-                using (this.mRedirections[0] = new StreamWriter(Console.OpenStandardOutput()))
-                {
-                    // Output -> stdout
-                    mRedirections[0].Write(GenerateLogContent(GenerateWilliamPrecontent(logger.Priority, logger.Purpose), info));
-                }
-            }
-        }
-        public void Log(object[] info, WilliamLogger logger, FileStream[] redirections)
-        {
-            if (logger is null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
-            if (info is null)
-            {
-                throw new ArgumentNullException(nameof(info));
-            }
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-            for (int i = 0; i < redirections.Length; i++)
-            {
-                try
-                {
-                    if (!this.mRedirectionsOnly)
-                    {
-                        using (this.mRedirections[i] = new StreamWriter(Console.OpenStandardOutput()))
-                        {
-                            // Output -> mRedirections[i]
-                            redirections[i].Write(GenerateLogContentByteArray(GenerateWilliamPrecontent(logger.Priority, logger.Purpose), info));
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    WilliamLogger.GetGlobal()
-                        .Log(new object[]
-                             {
-                                 $"An exception was thrown when processing {nameof(redirections)}[{i}]:\n",
-                                 $"{e.Message} ",
-                                 $"This exception will be ignored."
-                             },
-                             SERIOUS, e.GetType().ToString()
-                        );
-                }
-            }
-        }
-        public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, bool redirectionsOnly)
-        {
-            if (info is null)
-            {
-                throw new ArgumentNullException(nameof(info));
-            }
-
-            if (logger is null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
-            if (redirections is null)
-            {
-                throw new ArgumentNullException(nameof(redirections));
-            }
-
-
-        }
-        public void Log(object[] info, WilliamLogger logger, Exception innerException) { }
-        public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, Exception innerException) { }
-        public void Log(object[] info, WilliamLogger logger, FileStream[] redirections, Exception innerException, bool redirectionsOnly) { }
+        public void Log(object[]? info, object[] priority, string purpose, Exception innerException) { }
+        public void Log(object[]? info, object[] priority, string purpose, string[]? redirections, Exception innerException) { }
+        public void Log(object[]? info, object[] priority, string purpose, string[]? redirections, Exception innerException, bool redirectionsOnly) { }
+        public void Log(object[]? info, WilliamLogger logger) { }
+        public void Log(object[]? info, WilliamLogger logger, string[]? redirections) { }
+        /* ! */ public void Log(object[]? info, WilliamLogger logger, string[]? redirections, bool redirectionsOnly) { }
+        public void Log(object[]? info, WilliamLogger logger, Exception innerException) { }
+        public void Log(object[]? info, WilliamLogger logger, string[]? redirections, Exception innerException) { }
+        public void Log(object[]? info, WilliamLogger logger, string[]? redirections, Exception innerException, bool redirectionsOnly) { }
 
         /// <summary>
         /// Make sure every line for outputing is covered with WilliamPrecontent ahead.
         /// </summary>
-        /// <param name="targetStr"></param>\
-        /// <returns>A single string which contains content of generated info to be logged out.
-        ///          It returns "" when content is null or empty. </returns>
-        public static string GenerateLogContent(string WilliamPrecontent, object[] targetStr)
+        /// <param name="info"></param>\
+        /// <returns>A single string which contains info of generated info to be logged out.
+        ///          It returns "" when info is null or empty. </returns>
+        public static string GenerateLogContent(string WilliamPrecontent, object[] info)
         {
-            if (targetStr is null)
+            if (info is null)
             {
                 WilliamLogger.GetGlobal()
-                    .Log(new object[] { $"{nameof(targetStr)} should never be null." },
+                    .Log(new object[] { $"{nameof(info)} should never be null." },
                          DEBUG,
                          EXCEPTION);
                 return "";
@@ -570,14 +363,14 @@ namespace WillNTFS.src.userinterface.exports
 
             try
             {
-                for (int i = 0; i < targetStr.Length; i++)
+                for (int i = 0; i < info.Length; i++)
                 {
-                    if (targetStr[i].ToString() == null)
+                    if (info[i].ToString() == null)
                     {
                         throw new ArgumentNullException();
                     }
 
-                    string currStr = targetStr[i].ToString();
+                    string currStr = info[i].ToString();
                     char currStrChar = char.MaxValue;
 
                     for (int j = 0; j < currStr.Length; j++)
@@ -592,7 +385,8 @@ namespace WillNTFS.src.userinterface.exports
                         rtn += currStrChar;
                     }
                 }
-            } catch (ArgumentNullException e)
+            }
+            catch (ArgumentNullException e)
             {
                 WilliamLogger.GetGlobal()
                     .Log(new object[] { e.Message },
@@ -600,7 +394,7 @@ namespace WillNTFS.src.userinterface.exports
                          WilliamLogger.WPurpose.EXCEPTION);
             }
 
-            /* Finish logging by printting a line breaker. */
+            /*Finish logging by printting a line breaker.*/
             rtn += '\n';
             return rtn; // :)
         }
@@ -608,15 +402,15 @@ namespace WillNTFS.src.userinterface.exports
         /// <summary>
         /// Make sure every line for outputing is covered with WilliamPrecontent ahead.
         /// </summary>
-        /// <param name="targetStr"></param>\
-        /// <returns>A single string which contains content of generated info to be logged out.
-        ///          It returns "" when content is null or empty. </returns>
-        public static byte[] GenerateLogContentByteArray(string WilliamPrecontent, object[] targetStr)
+        /// <param name="info"></param>\
+        /// <returns>A single string which contains info of generated info to be logged out.
+        ///          It returns "" when info is null or empty. </returns>
+        public static byte[] GenerateLogContentByteArray(string WilliamPrecontent, object[] info)
         {
-            if (targetStr is null)
+            if (info is null)
             {
                 WilliamLogger.GetGlobal()
-                    .Log(new object[] { $"{nameof(targetStr)} should never be null." },
+                    .Log(new object[] { $"{nameof(info)} should never be null." },
                          DEBUG,
                          EXCEPTION);
                 return new byte[0];
@@ -627,14 +421,14 @@ namespace WillNTFS.src.userinterface.exports
 
             try
             {
-                for (int i = 0; i < targetStr.Length; i++)
+                for (int i = 0; i < info.Length; i++)
                 {
-                    if (targetStr[i].ToString() == null)
+                    if (info[i].ToString() == null)
                     {
                         throw new ArgumentNullException();
                     }
 
-                    string currStr = targetStr[i].ToString();
+                    string currStr = info[i].ToString();
                     char currStrChar = char.MaxValue;
 
                     for (int j = 0; j < currStr.Length; j++)
@@ -643,7 +437,7 @@ namespace WillNTFS.src.userinterface.exports
                         if (currStrChar == '\n')
                         {
                             rtn = ByteArrayAppend(rtn, Convert.ToByte('\n'));
-                            for (int k = 0; k < WilliamPrecontent.Length; k ++)
+                            for (int k = 0; k < WilliamPrecontent.Length; k++)
                             {
                                 rtn = ByteArrayAppend(rtn, Convert.ToByte(WilliamPrecontent[i]));
                             }
@@ -665,12 +459,10 @@ namespace WillNTFS.src.userinterface.exports
             rtn = ByteArrayAppend(rtn, Convert.ToByte('\n'));
             return rtn; // :)
         }
-
         private static string GenerateWilliamPrecontent(object[] priority, string purpose)
         {
             return ($"{WILLIAM_LOG_DECORATION}[{priority[0]}]({WILLIAM_SIGN} - {purpose}): ");
         }
-
         private static byte[] GenerateWilliamPrecontentByteArray(object[] priority, string purpose)
         {
             /* Pick example */
@@ -679,30 +471,32 @@ namespace WillNTFS.src.userinterface.exports
             /* Initiate result container */
             byte[] rtn = new byte[williamPrecontentString.Length];
             /* Fullfill result container */
-            for (int i = 0; i < rtn.Length; i ++)
+            for (int i = 0; i < rtn.Length; i++)
             {
                 rtn[i] = Convert.ToByte(williamPrecontentString[i]);
             }
 
             return rtn;
         }
-
+        private static string GenerateLogFileFullName()
+        {
+            return ();
+        }
         public static WilliamLogger GetGlobal()
         {
             return globalWilliamLogger;
         }
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="wLogger"></param>
-        /// <param name="streams">Target indexed stream array.</param>
+        /// <param name="streams">Target indexed redirection array.</param>
         /// <exception cref="ArgumentException">Thrown once target indexed object is not Stream nor sub-Stream.</exception>
-        private void LogToVariantStreams(WilliamLogger wLogger, FileStream[] streams)
+        private void LogToVariantStreams(WilliamLogger wLogger, string[] streams)
         {
             CheckRedirectionsPermissions(streams, FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_ALL);
 
-            for (int i = 0; i < streams.Length; i ++)
+            for (int i = 0; i < streams.Length; i++)
             {
                 if (streams[i] is not Stream)
                 {
@@ -714,17 +508,111 @@ namespace WillNTFS.src.userinterface.exports
                 {
                     /* Keyword "using" is used from caller */
                     streams[i].Write(GenerateWilliamPrecontentByteArray(wLogger.mPriority, wLogger.mPurpose));
-                } catch (IOException ioe)
+                }
+                catch (IOException ioe)
                 {
-
+                    // TODO: HERE
                 }
             }
+        }
+        public void CheckCreateOnFile(string file)
+        {
+            using (FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Write))
+            {
+                CheckRedirectionPermissions(file, FILE_STREAM_ACCESS_PERMISSION_RESTRICTION_WRITEONLY);
+            }
+
+            if (!File.Exists(file))
+            {
+                File.Create(file);
+            }
+        }
+        public void CheckCreateOnFiles(string[] files)
+        {
+            for (int i = 0; i < files.Length; i++)
+            {
+
+                CheckRedirectionsPermissions(files, FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_WRITEONLY);
+
+                if (!File.Exists(files[i]))
+                {
+                    File.Create(files[i]);
+                }
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="redirection"></param>
+        /// <param name="restriction">A linear array stores restriction on
+        /// making specified permission of item being accessed.
+        /// { READING, WRITTING, SEEKING } is for item's permissions;
+        /// Each item have those 3 permissions to be optionally required.
+        /// Formular: restriction[ITEM][PERM] : bool 
+        /// <exception cref="IOException">Thrown once errored accessing.</exception>
+        private void CheckRedirectionPermissions(string redirection, bool[] restriction)
+        {
+            using (FileStream redirectionStream = new FileStream(redirection, FileMode.Open))
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    /* Restricted */
+                    if (restriction[i])
+                    {
+                        /* Readable->Do nothing */
+                        /* Unreadable->Exception */
+                        if (!redirectionStream.CanRead)
+                        {
+                            throw new IOException($"File \"{redirectionStream.Name}\" cannot be read.");
+                        }
+                        /* Same */
+                        if (!redirectionStream.CanWrite)
+                        {
+                            throw new IOException($"File \"{redirectionStream.Name}\" cannot be written.");
+                        }
+                        /* Same */
+                        if (!redirectionStream.CanSeek)
+                        {
+                            throw new IOException($"File \"{redirectionStream.Name}\" cannot be seeken.");
+                        }
+                    }
+                    else /* Inrestricted */
+                    {
+                        /* Readable->Do nothing
+                           Unreadable->Log warnning */
+                        if (!redirectionStream.CanRead)
+                        {
+                            string info = $"File \"{redirectionStream.Name}\" was neither readable nor restricted.";
+                            WilliamLogger.GetGlobal()
+                                .Log(new object[] { info },
+                                MAJOR, LOGGING, new string[] { this.mLogFile });
+                        }
+                        /* Same */
+                        if (!redirectionStream.CanWrite)
+                        {
+                            string info = $"File \"{redirectionStream.Name}\" was neither writable nor restricted.";
+                            WilliamLogger.GetGlobal()
+                                .Log(new object[] { info },
+                                MAJOR, LOGGING, new string[] { this.mLogFile });
+                        }
+                        /* Same */
+                        if (!redirectionStream.CanSeek)
+                        {
+                            string info = $"File \"{redirectionStream.Name}\" was neither seekable nor restricted.";
+                            WilliamLogger.GetGlobal()
+                                .Log(new object[] { info },
+                                MAJOR, LOGGING, new string[] { this.mLogFile });
+                        }
+                    }
+                }
+            }
+
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="streams"></param>
+        /// <param name="redirections"></param>
         /// <param name="restrictions"></param> An 2D array stores restriction on
         /// making specified permission of item being accessed.
         /// { item1, item2, item3... } is for items;
@@ -732,94 +620,25 @@ namespace WillNTFS.src.userinterface.exports
         /// Each item have those 3 permissions to be optionally required.
         /// Formular: restriction[ITEM][PERM] : bool
         /// <exception cref="IOException">Thrown once errored accessing.</exception>
-        private void CheckRedirectionsPermissions(FileStream[] streams, bool[][] restrictions)
+        private void CheckRedirectionsPermissions(string[] redirections, bool[][] restrictions)
         {
-            for (int i = 0; i < streams.Length; i ++)
+            for (int i = 0; i < redirections.Length; i++)
             {
-                CheckRedirectionPermissions(streams[i], restrictions[i]);
+                CheckRedirectionPermissions(redirections[i], restrictions[i]);
             }
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="restriction">A linear array stores restriction on
-        /// making specified permission of item being accessed.
-        /// { READING, WRITTING, SEEKING } is for item's permissions;
-        /// Each item have those 3 permissions to be optionally required.
-        /// Formular: restriction[ITEM][PERM] : bool */
-        /// <exception cref="IOException">Thrown once errored accessing.</exception>
-        private void CheckRedirectionPermissions(FileStream stream, bool[] restriction)
-        {
-            for (int i = 0; i < 3; i ++)
-            {
-                /* Restricted */
-                if (restriction[i])
-                {
-                    /* Readable -> Do nothing */
-                    /* Unreadable -> Exception */
-                    if (!stream.CanRead)
-                    {
-                        throw new IOException($"File \"{stream.Name}\" cannot be read.");
-                    }
-                    /* Same */
-                    if (!stream.CanWrite)
-                    {
-                        throw new IOException($"File \"{stream.Name}\" cannot be written.");
-                    }
-                    /* Same */
-                    if (!stream.CanSeek)
-                    {
-                        throw new IOException($"File \"{stream.Name}\" cannot be seeken.");
-                    }
-                }
-                else /* Inrestricted */
-                {
-                    /* Readable -> Do nothing */
-                    /* Unreadable -> Log warnning */
-                    if (!stream.CanRead)
-                    {
-                        string info = $"File \"{stream.Name}\" was neither readable nor restricted.";
-                        WilliamLogger.GetGlobal()
-                            .Log(new object[] { info },
-                            MAJOR, LOGGING, new FileStream[] { File.OpenWrite(this.mLogFile) });
-                    }
-                    /* Same */
-                    if (!stream.CanWrite)
-                    {
-                        string info = $"File \"{stream.Name}\" was neither writable nor restricted.";
-                        WilliamLogger.GetGlobal()
-                            .Log(new object[] { info },
-                            MAJOR, LOGGING, new FileStream[] { File.OpenWrite(this.mLogFile) });
-                    }
-                    /* Same */
-                    if (!stream.CanSeek)
-                    {
-                        string info = $"File \"{stream.Name}\" was neither seekable nor restricted.";
-                        WilliamLogger.GetGlobal()
-                            .Log(new object[] { info },
-                            MAJOR, LOGGING, new FileStream[] { File.OpenWrite(this.mLogFile) });
-                    }
-                }
-            }
-        }
-
         public string GetLogFileName()
         {
             return this.mLogFileName;
         }
-
         public string GetLogFilePath()
         {
             return this.mLogFilePath;
         }
-
         public string GetLogFile()
         {
             return this.mLogFile;
         }
-
         private static byte[] ByteArrayAppend(byte[] array, byte content)
         {
             int len = array.Length;
@@ -827,7 +646,7 @@ namespace WillNTFS.src.userinterface.exports
             /* Create a new array<byte> object */
             byte[] newArray = new byte[len + 1];
             /* Copy elements from original array */
-            for (int i = 0; i < len; i ++)
+            for (int i = 0; i < len; i++)
             {
                 newArray[i] = array[i];
             }
@@ -836,23 +655,21 @@ namespace WillNTFS.src.userinterface.exports
 
             return newArray;
         }
-
         private static bool[][] FileStreamAccessPermissionRestrictionsAdding(bool[][] A, bool[][] B)
         {
             bool[][] rtn = FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE;
 
-            for (int i = 0; i < A.Length; i ++)
-                for (int j = 0; j < A[0].Length; j ++)
+            for (int i = 0; i < A.Length; i++)
+                for (int j = 0; j < A[0].Length; j++)
                     rtn[i][j] = (A[i][j] || B[i][j]);
             return rtn;
         }
-
         private static bool[][] FileStreamAccessPermissionRestrictionsMinusing(bool[][] A, bool[][] B)
         {
             bool[][] rtn = FILE_STREAM_ACCESS_PERMISSION_RESTRICTIONS_NONE;
 
-            for (int i = 0; i < A.Length; i ++)
-                for (int j = 0; j < A[0].Length; j ++)
+            for (int i = 0; i < A.Length; i++)
+                for (int j = 0; j < A[0].Length; j++)
                     rtn[i][j] = (A[i][j] ^ B[i][j]);
             return rtn;
         }
