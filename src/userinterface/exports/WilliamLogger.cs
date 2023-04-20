@@ -17,7 +17,7 @@ namespace WillNTFS.src.userinterface.exports
     // William
     internal class WilliamLogger
     {
-        /*Static fields*/
+        /* Static fields */
         public readonly static Encoding globalEnc = Encoding.Unicode;
         public readonly static string WILLIAM_LOG_DECORATION = ">>> ";
         public readonly static string WILLIAM_SIGN = "William";
@@ -69,7 +69,7 @@ namespace WillNTFS.src.userinterface.exports
             };
         private static readonly int BUFF_SIZE_MAX = 4096;
 
-        /*Instance fields*/
+        /* Instance fields */
         private readonly DateTimeFormat mLogFileNameDateTimeFormat;
         private readonly DateTime mLogFileNameDateTimeValue;
         private readonly string mLogFileName;
@@ -78,22 +78,22 @@ namespace WillNTFS.src.userinterface.exports
         private readonly object[] mPriority;
         private readonly string mPurpose;
         private readonly string[] mRedirections;
-        private readonly FileStream[] mFileStreams;
+        private readonly FileStream[] mStreamRedirections;
         private readonly bool mRedirectionsOnly;
         private Int16[] buffer;
 
         public class WPriority
         {
-            public static readonly object[] NONE = { "NONE", int.MinValue };
-            public static readonly object[] MINOR = { "MINOR", 10000 };
-            public static readonly object[] NORMAL = { "NORMAL", 20000 };
-            public static readonly object[] MAJOR = { "MAJOR", 30000 };
-            public static readonly object[] SERIOUS = { "SERIOUS", 40000 };
-            public static readonly object[] DANDEROUS = { "DANDEROUS", 50000 };
-            public static readonly object[] FATAL = { "FATAL", 60000 };
-            public static readonly object[] DEBUG = { "DEBUG", 70000 };
-            public static readonly object[] ALL = { "ALL", int.MaxValue };
-            public static readonly object[] DEFAULT = NONE;
+            public static readonly object[] NONE        = { "NONE",       int.MinValue };
+            public static readonly object[] MINOR       = { "MINOR",      10000        };
+            public static readonly object[] NORMAL      = { "NORMAL",     20000        };
+            public static readonly object[] MAJOR       = { "MAJOR",      30000        };
+            public static readonly object[] SERIOUS     = { "SERIOUS",    40000        };
+            public static readonly object[] DANDEROUS   = { "DANDEROUS",  50000        };
+            public static readonly object[] FATAL       = { "FATAL",      60000        };
+            public static readonly object[] DEBUG       = { "DEBUG",      70000        };
+            public static readonly object[] ALL         = { "ALL",        int.MaxValue };
+            public static readonly object[] DEFAULT     = NONE;
 
             private WPriority() { }
 
@@ -167,13 +167,13 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
             this.mLogFileName = (logFIleNameDateTimeFormatString is null
-                                                ? DEFAULT_LOG_FILE_NAME_ALONE
-                                                : logFIleNameDateTimeFormatString);
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
             this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
             this.mRedirections = new string[] { "" };
-            this.mFileStreams = new FileStream[1];
+            this.mStreamRedirections = new FileStream[1];
             this.mRedirectionsOnly = false;
 
             this.buffer = new Int16[BUFF_SIZE_MAX];
@@ -188,13 +188,13 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
             this.mLogFileName = (logFIleNameDateTimeFormatString is null
-                                                ? DEFAULT_LOG_FILE_NAME_ALONE
-                                                : logFIleNameDateTimeFormatString);
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
             this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
             this.mRedirections = redirections;
-            this.mFileStreams = new FileStream[1];
+            this.mStreamRedirections = new FileStream[1];
             this.mRedirectionsOnly = false;
 
             this.buffer = new Int16[BUFF_SIZE_MAX];
@@ -209,13 +209,13 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
             this.mLogFileName = (logFIleNameDateTimeFormatString is null
-                                                ? DEFAULT_LOG_FILE_NAME_ALONE
-                                                : logFIleNameDateTimeFormatString);
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
             this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
             this.mRedirections = redirections;
-            this.mFileStreams = new FileStream[1];
+            this.mStreamRedirections = new FileStream[1];
             this.mRedirectionsOnly = redirectionsOnly;
 
             this.buffer = new Int16[BUFF_SIZE_MAX];
@@ -230,13 +230,13 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
             this.mLogFileName = (logFIleNameDateTimeFormatString is null
-                                                ? DEFAULT_LOG_FILE_NAME_ALONE
-                                                : logFIleNameDateTimeFormatString);
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
             this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
             this.mRedirections = new string[] { "" };
-            this.mFileStreams = new FileStream[1];
+            this.mStreamRedirections = new FileStream[1];
             this.mRedirectionsOnly = redirectionsOnly;
 
             this.buffer = new Int16[BUFF_SIZE_MAX];
@@ -251,13 +251,13 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
             this.mLogFileName = (logFIleNameDateTimeFormatString is null
-                                                ? DEFAULT_LOG_FILE_NAME_ALONE
-                                                : logFIleNameDateTimeFormatString);
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
             this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
             this.mRedirections = new string[] { "" };
-            this.mFileStreams = streamRedirections;
+            this.mStreamRedirections = streamRedirections;
             this.mRedirectionsOnly = false;
 
             this.buffer = new Int16[BUFF_SIZE_MAX];
@@ -272,13 +272,55 @@ namespace WillNTFS.src.userinterface.exports
             this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
             this.mLogFileNameDateTimeValue = DateTime.Now;
             this.mLogFileName = (logFIleNameDateTimeFormatString is null
-                                                ? DEFAULT_LOG_FILE_NAME_ALONE
-                                                : logFIleNameDateTimeFormatString);
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
             this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
             this.mLogFile = (this.mLogFilePath + this.mLogFileName);
 
             this.mRedirections = new string[] { "" };
-            this.mFileStreams = streamRedirections;
+            this.mStreamRedirections = streamRedirections;
+            this.mRedirectionsOnly = redirectionsOnly;
+
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, FileStream[] streamRedirections, string[] redirections)
+        {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
+            this.mPriority = priority;
+            this.mPurpose = purpose;
+
+            this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
+            this.mLogFileNameDateTimeValue = DateTime.Now;
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
+            this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
+
+            this.mRedirections = new string[] { "" };
+            this.mStreamRedirections = streamRedirections;
+            this.mRedirectionsOnly = false;
+
+            this.buffer = new Int16[BUFF_SIZE_MAX];
+        }
+        public WilliamLogger(object[] priority, string purpose, FileStream[] streamRedirections, string[] redirections, bool redirectionsOnly)
+        {
+            string logFIleNameDateTimeFormatString = this.mLogFileNameDateTimeFormat.ToString();
+
+            this.mPriority = priority;
+            this.mPurpose = purpose;
+
+            this.mLogFileNameDateTimeFormat = new DateTimeFormat("yyyyMMddHHmmss");
+            this.mLogFileNameDateTimeValue = DateTime.Now;
+            this.mLogFileName = (logFIleNameDateTimeFormatString is null
+                                 ? DEFAULT_LOG_FILE_NAME_ALONE
+                                 : logFIleNameDateTimeFormatString);
+            this.mLogFilePath = DEFAULT_LOG_FILE_PATH;
+            this.mLogFile = (this.mLogFilePath + this.mLogFileName);
+
+            this.mRedirections = new string[] { "" };
+            this.mStreamRedirections = streamRedirections;
             this.mRedirectionsOnly = redirectionsOnly;
 
             this.buffer = new Int16[BUFF_SIZE_MAX];
@@ -296,14 +338,14 @@ namespace WillNTFS.src.userinterface.exports
          * 03 func Log: (object[]? info, object[] priority, string purpose, Exception innerException)                            // Uses @info, @priority, @purpose, stderr, @innerException, false
          * 04 func Log: (object[]? info, object[] priority, string purpose, string[]? redirections, Exception innerException)    // Uses @info, @priority, @purpose, @redirections, @innerException, false
          * 05 func Log: (object[]? info, object[] priority, string purpose, string[]? redirections, Exception innerException,    // Uses @info, @priority, @purpose, @redirections, @innerException, @redirectionsOnly
-         * ....................................................................................... bool redirectionsOnly)
+         * ........................................................................................ bool redirectionsOnly)
          * 06 func Log: (object[]? info, WilliamLogger logger)                                                                   // Uses @info, @logger.mPriority, @logger.mPurpose, stderr, Exception, false
          * 07 func Log: (object[]? info, WilliamLogger logger, string[]? redirections)                                           // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, Exception, false
          * 08 func Log: (object[]? info, WilliamLogger logger, string[]? redirections, bool redirectionsOnly)                    // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, Exception, @redirectionsOnly
          * 09 func Log: (object[]? info, WilliamLogger logger, Exception innerException)                                         // Uses @info, @logger.mPriority, @logger.mPurpose, stderr, @innerException, false
          * 0A func Log: (object[]? info, WilliamLogger logger, string[]? redirections, Exception innerException)                 // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, @innerException, false
          * 0B func Log: (object[]? info, WilliamLogger logger, string[]? redirections, Exception innerException,                 // Uses @info, @logger.mPriority, @logger.mPurpose, @redirections, @innerException, @redirectionsOnly
-         * .......................................................................... bool redirectionsOnly)
+         * ........................................................................... bool redirectionsOnly)
          */
 
         public void Log(object[]? info)
@@ -328,7 +370,7 @@ namespace WillNTFS.src.userinterface.exports
 
             for (int i = 0; i < redirections.Length; i ++)
             {
-
+                // TODO: HERE
             }
         }
         public void Log(object[]? info, object[] priority, string purpose, Exception innerException) { }
